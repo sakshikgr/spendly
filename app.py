@@ -101,14 +101,45 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.route("/profile")
+def profile():
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    # Hardcoded sample data — replaced with real queries in Step 5.
+    user = {
+        "name": "Demo User",
+        "email": "demo@spendly.com",
+        "initials": "DU",
+        "member_since": "January 2026",
+    }
+    expenses = [
+        {"date": "08 Oct 2026", "description": "Mobile recharge", "category": "Bills", "amount": 899.00},
+        {"date": "07 Oct 2026", "description": "Movie tickets", "category": "Entertainment", "amount": 499.00},
+        {"date": "06 Oct 2026", "description": "Dinner with friends", "category": "Food", "amount": 320.00},
+        {"date": "05 Oct 2026", "description": "Pharmacy", "category": "Health", "amount": 650.00},
+        {"date": "04 Oct 2026", "description": "Running shoes", "category": "Shopping", "amount": 2499.00},
+        {"date": "03 Oct 2026", "description": "Metro card recharge", "category": "Travel", "amount": 180.00},
+        {"date": "02 Oct 2026", "description": "Groceries", "category": "Food", "amount": 450.50},
+        {"date": "01 Oct 2026", "description": "Electricity bill", "category": "Bills", "amount": 1200.00},
+    ]
+    stats = {"total_spent": 6697.50, "transactions": 8, "top_category": "Shopping"}
+    categories = [
+        {"name": "Shopping", "amount": 2499.00, "pct": 37},
+        {"name": "Bills", "amount": 2099.00, "pct": 31},
+        {"name": "Food", "amount": 770.50, "pct": 12},
+        {"name": "Health", "amount": 650.00, "pct": 10},
+        {"name": "Entertainment", "amount": 499.00, "pct": 7},
+        {"name": "Travel", "amount": 180.00, "pct": 3},
+    ]
+    return render_template(
+        "profile.html", user=user, stats=stats, expenses=expenses, categories=categories
+    )
+
+
 # ------------------------------------------------------------------ #
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
-
-@app.route("/profile")
-def profile():
-    return "Profile page — coming in Step 4"
-
 
 @app.route("/expenses/add")
 def add_expense():
