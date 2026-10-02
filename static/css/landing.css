@@ -73,6 +73,10 @@
     padding: 1rem 2.5rem;
     border-radius: 12px;
     transition: background 0.2s;
+    border: none;
+    font-family: inherit;
+    line-height: inherit;
+    cursor: pointer;
 }
 
 .hero-btn:hover { background: var(--accent); }
@@ -183,6 +187,64 @@
 .preview-bar-food { background: #e5a242; }
 .preview-bar-travel { background: #4a86d6; }
 .preview-bar-bills { background: #7c6fd1; }
+
+/* ------------------------------------------------------------------ */
+/* Landing — "See how it works" video modal                           */
+/* ------------------------------------------------------------------ */
+
+.video-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: rgba(15, 15, 15, 0.75);
+}
+
+.video-modal[hidden] { display: none; }
+
+.video-modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 960px;
+}
+
+.video-modal-frame {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: var(--ink);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.video-modal-frame iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.video-modal-close {
+    position: absolute;
+    top: -3rem;
+    right: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: none;
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.video-modal-close:hover { background: var(--accent-light); }
 
 /* ------------------------------------------------------------------ */
 /* Landing — Responsive                                                */

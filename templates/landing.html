@@ -23,7 +23,8 @@
     </p>
     <div class="hero-actions">
         <a href="{{ url_for('register') }}" class="hero-btn">Create free account</a>
-        <a href="#how-it-works" class="hero-btn">See how it works</a>
+        <button type="button" class="hero-btn" id="how-it-works-btn"
+                aria-haspopup="dialog" aria-controls="video-modal">See how it works</button>
     </div>
 
     <div class="hero-preview">
@@ -100,4 +101,58 @@
     </div>
 </section>
 
+<div class="video-modal" id="video-modal" role="dialog" aria-modal="true"
+     aria-label="See how Spendly works" hidden>
+    <div class="video-modal-content">
+        <button type="button" class="video-modal-close" aria-label="Close video">&times;</button>
+        <div class="video-modal-frame">
+            {# Placeholder video — replace the ID in data-src with the real one #}
+            <iframe data-src="https://www.youtube.com/embed/aqz-KE-bpKQ?autoplay=1&rel=0"
+                    title="See how Spendly works"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allowfullscreen></iframe>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        var openBtn = document.getElementById("how-it-works-btn");
+        var modal = document.getElementById("video-modal");
+        var closeBtn = modal.querySelector(".video-modal-close");
+        var iframe = modal.querySelector("iframe");
+
+        function openModal() {
+            iframe.src = iframe.dataset.src;
+            modal.hidden = false;
+            document.body.style.overflow = "hidden";
+            closeBtn.focus();
+        }
+
+        function closeModal() {
+            if (modal.hidden) return;
+            modal.hidden = true;
+            // Removing the src unloads the player so the video stops.
+            iframe.removeAttribute("src");
+            document.body.style.overflow = "";
+            openBtn.focus();
+        }
+
+        openBtn.addEventListener("click", openModal);
+        closeBtn.addEventListener("click", closeModal);
+
+        // Clicking the dark overlay (outside the content box) closes it.
+        modal.addEventListener("click", function (e) {
+            if (e.target === modal) closeModal();
+        });
+
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") closeModal();
+        });
+    })();
+</script>
 {% endblock %}
