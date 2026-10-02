@@ -1,8 +1,13 @@
-from flask import Flask, render_template
+import os
+import sqlite3
 
-from database.db import init_db, seed_db
+from flask import Flask, flash, redirect, render_template, request, url_for
+
+from database.db import create_user, get_user_by_email, init_db, seed_db
 
 app = Flask(__name__)
+# Fallback key is for local development only — set SECRET_KEY in production.
+app.secret_key = os.environ.get("SECRET_KEY", "dev-only-change-me")
 
 with app.app_context():
     init_db()
@@ -18,9 +23,36 @@ def landing():
     return render_template("landing.html")
 
 
-@app.route("/register")
+@app.route("/register", methods=["GET", "POST"])
 def register():
-    return render_template("register.html")
+    if request.method == "GET":
+        return render_template("register.html")
+
+    name = request.form.get("name", "").strip()
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
+
+    def form_error(message, status):
+        return render_template("register.html", error=message, name=name, email=email), status
+
+    local, _, domain = email.partition("@")
+    if not name:
+        return form_error("Please enter your name.", 400)
+    if not local or "." not in domain:
+        return form_error("Please enter a valid email address.", 400)
+    if len(password) < 8:
+        return form_error("Password must be at least 8 characters.", 400)
+
+    duplicate = "An account with that email already exists."
+    if get_user_by_email(email):
+        return form_error(duplicate, 409)
+    try:
+        create_user(name, email, password)
+    except sqlite3.IntegrityError:
+        return form_error(duplicate, 409)
+
+    flash("Account created — please sign in.", "success")
+    return redirect(url_for("login"))
 
 
 @app.route("/login")
