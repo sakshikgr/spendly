@@ -28,7 +28,7 @@ git commit -m "landing: add terms and conditions page and route”
 Do the same as you did for the Terms and Conditions page,
 but for Privacy Policy.
 
-1. Add a new route in [app.py](http://app.py/):
+1. Add a new route in [@app.py](http://app.py/):
 GET /privacy → renders templates/privacy.html
 2. Create templates/privacy.html with generic privacy policy
 content appropriate for a personal expense tracking app.
@@ -40,9 +40,10 @@ footer link href from "#" to "/privacy".
 
 git commit -m "landing: add privacy policy page and route”
 
+
 I've attached a screenshot of the updated Spendly hero section design.
 
-Modify only the hero section in templates/landing.html and static/css/landing.css
+Modify only the hero section in @templates/landing.html and @static/css/landing.css
 to match this image exactly. Do not touch any other part of the page.
 
 Changes to implement:
