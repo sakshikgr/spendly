@@ -20,6 +20,36 @@
             </div>
         </div>
 
+        <div class="profile-card filter-card">
+            <div class="profile-card-header">
+                <h2 class="profile-card-title">Filter by date</h2>
+                <nav class="filter-presets" aria-label="Date presets">
+                    {% for p in presets %}
+                    <a class="preset-link{% if p.key == date_filter.active_preset %} preset-active{% endif %}"
+                       href="{{ url_for('profile', **{'from': p['from'], 'to': p['to']}) if p['from'] else url_for('profile') }}">{{ p.label }}</a>
+                    {% endfor %}
+                </nav>
+            </div>
+            <form method="get" action="{{ url_for('profile') }}" class="filter-form">
+                <label class="filter-field">
+                    <span class="stat-label">From</span>
+                    <input type="date" name="from" class="filter-input" value="{{ date_filter.date_from or '' }}">
+                </label>
+                <label class="filter-field">
+                    <span class="stat-label">To</span>
+                    <input type="date" name="to" class="filter-input" value="{{ date_filter.date_to or '' }}">
+                </label>
+                <button type="submit" class="btn-primary">Apply</button>
+                <a href="{{ url_for('profile') }}" class="filter-clear">Clear</a>
+            </form>
+            {% if date_filter.error %}
+            <div class="filter-error">{{ date_filter.error }}</div>
+            {% endif %}
+            {% if date_filter.label %}
+            <p class="filter-label">{{ date_filter.label }}</p>
+            {% endif %}
+        </div>
+
         <div class="profile-stats">
             <div class="stat-card">
                 <span class="stat-label">Total spent</span>
@@ -60,7 +90,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="4" class="txn-empty">No expenses yet.</td>
+                            <td colspan="4" class="txn-empty">{{ "No expenses in this date range." if date_filter.active else "No expenses yet." }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
