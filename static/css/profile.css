@@ -237,6 +237,85 @@
 .category-bar-shopping      { --bar-fill: var(--ink-soft); }
 
 /* ------------------------------------------------------------------ */
+/* Date filter                                                         */
+/* ------------------------------------------------------------------ */
+
+.filter-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.preset-link {
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: var(--paper-warm);
+    color: var(--ink-soft);
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+}
+
+.preset-link:hover { color: var(--ink); }
+
+.preset-link.preset-active {
+    background: var(--accent);
+    color: var(--paper);
+}
+
+.filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 1rem;
+}
+
+.filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.filter-input {
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.filter-clear {
+    align-self: center;
+    font-size: 0.9rem;
+    color: var(--ink-muted);
+}
+
+.filter-clear:hover { color: var(--ink); }
+
+.filter-error {
+    margin-top: 1.25rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-sm);
+    background: var(--danger-light);
+    color: var(--danger);
+    font-size: 0.875rem;
+}
+
+.filter-label {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+}
+
+/* ------------------------------------------------------------------ */
 /* Responsive                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -251,6 +330,13 @@
     }
 
     .profile-stats { grid-template-columns: 1fr; }
+
+    .filter-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-clear { align-self: flex-start; }
 
     .profile-card-header {
         flex-direction: column;

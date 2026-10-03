@@ -128,30 +128,43 @@ def get_user_by_id(user_id):
 # Expenses                                                            #
 # ------------------------------------------------------------------ #
 
-def get_expenses_for_user(user_id):
+def _date_range_clause(date_from, date_to):
+    clause, params = "", []
+    if date_from:
+        clause += " AND date >= ?"
+        params.append(date_from)
+    if date_to:
+        clause += " AND date <= ?"
+        params.append(date_to)
+    return clause, tuple(params)
+
+
+def get_expenses_for_user(user_id, date_from=None, date_to=None):
+    clause, params = _date_range_clause(date_from, date_to)
     conn = get_db()
     try:
         return conn.execute(
             "SELECT id, amount, category, date, description FROM expenses "
-            "WHERE user_id = ? ORDER BY date DESC, id DESC",
-            (user_id,),
+            "WHERE user_id = ?" + clause + " ORDER BY date DESC, id DESC",
+            (user_id, *params),
         ).fetchall()
     finally:
         conn.close()
 
 
-def get_expense_stats(user_id):
+def get_expense_stats(user_id, date_from=None, date_to=None):
+    clause, params = _date_range_clause(date_from, date_to)
     conn = get_db()
     try:
         totals = conn.execute(
             "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count "
-            "FROM expenses WHERE user_id = ?",
-            (user_id,),
+            "FROM expenses WHERE user_id = ?" + clause,
+            (user_id, *params),
         ).fetchone()
         top = conn.execute(
-            "SELECT category FROM expenses WHERE user_id = ? "
+            "SELECT category FROM expenses WHERE user_id = ?" + clause + " "
             "GROUP BY category ORDER BY SUM(amount) DESC, category LIMIT 1",
-            (user_id,),
+            (user_id, *params),
         ).fetchone()
         return {
             "total": float(totals["total"]),
@@ -162,13 +175,14 @@ def get_expense_stats(user_id):
         conn.close()
 
 
-def get_category_totals(user_id):
+def get_category_totals(user_id, date_from=None, date_to=None):
+    clause, params = _date_range_clause(date_from, date_to)
     conn = get_db()
     try:
         return conn.execute(
             "SELECT category, SUM(amount) AS total FROM expenses "
-            "WHERE user_id = ? GROUP BY category ORDER BY total DESC, category",
-            (user_id,),
+            "WHERE user_id = ?" + clause + " GROUP BY category ORDER BY total DESC, category",
+            (user_id, *params),
         ).fetchall()
     finally:
         conn.close()

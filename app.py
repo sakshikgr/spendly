@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
@@ -29,7 +29,7 @@ with app.app_context():
 # Profile helpers                                                     #
 # ------------------------------------------------------------------ #
 
-def build_expenses(user_id):
+def build_expenses(user_id, date_from=None, date_to=None):
     return [
         {
             "date": datetime.strptime(row["date"], "%Y-%m-%d").strftime("%d %b %Y"),
@@ -37,12 +37,12 @@ def build_expenses(user_id):
             "category": row["category"],
             "amount": row["amount"],
         }
-        for row in get_expenses_for_user(user_id)
+        for row in get_expenses_for_user(user_id, date_from, date_to)
     ]
 
 
-def build_stats(user_id):
-    stats = get_expense_stats(user_id)
+def build_stats(user_id, date_from=None, date_to=None):
+    stats = get_expense_stats(user_id, date_from, date_to)
     return {
         "total_spent": stats["total"],
         "transactions": stats["count"],
@@ -50,8 +50,8 @@ def build_stats(user_id):
     }
 
 
-def build_categories(user_id):
-    rows = get_category_totals(user_id)
+def build_categories(user_id, date_from=None, date_to=None):
+    rows = get_category_totals(user_id, date_from, date_to)
     grand_total = sum(row["total"] for row in rows)
     if not grand_total:
         return []
@@ -63,6 +63,58 @@ def build_categories(user_id):
         }
         for row in rows
     ]
+
+
+# ------------------------------------------------------------------ #
+# Date filter helpers                                                 #
+# ------------------------------------------------------------------ #
+
+def parse_date_filter(args):
+    """Return (date_from, date_to, error) as ISO strings or None."""
+    bounds, error = [], None
+    for key in ("from", "to"):
+        value = args.get(key, "").strip()
+        if not value:
+            bounds.append(None)
+            continue
+        try:
+            bounds.append(datetime.strptime(value, "%Y-%m-%d").date())
+        except ValueError:
+            # Drop only the invalid bound; a valid one still filters.
+            bounds.append(None)
+            error = "Invalid date — showing all expenses."
+
+    date_from, date_to = bounds
+    if date_from and date_to and date_from > date_to:
+        return None, None, "Start date must be before end date."
+    return (
+        date_from.isoformat() if date_from else None,
+        date_to.isoformat() if date_to else None,
+        error,
+    )
+
+
+def build_presets(today):
+    return [
+        {"key": "month", "label": "This month",
+         "from": today.replace(day=1).isoformat(), "to": today.isoformat()},
+        {"key": "30d", "label": "Last 30 days",
+         "from": (today - timedelta(days=29)).isoformat(), "to": today.isoformat()},
+        {"key": "all", "label": "All time", "from": None, "to": None},
+    ]
+
+
+def format_range_label(date_from, date_to):
+    def fmt(value):
+        return datetime.strptime(value, "%Y-%m-%d").strftime("%d %b %Y")
+
+    if date_from and date_to:
+        return f"Showing {fmt(date_from)} – {fmt(date_to)}"
+    if date_from:
+        return f"Showing from {fmt(date_from)}"
+    if date_to:
+        return f"Showing up to {fmt(date_to)}"
+    return None
 
 
 # ------------------------------------------------------------------ #
@@ -168,12 +220,28 @@ def profile():
         "initials": "".join(word[0] for word in row["name"].split()[:2]).upper(),
         "member_since": datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S").strftime("%B %Y"),
     }
+    date_from, date_to, error = parse_date_filter(request.args)
+    presets = build_presets(date.today())
+    active_preset = next(
+        (p["key"] for p in presets if (p["from"], p["to"]) == (date_from, date_to)),
+        None,
+    )
+    date_filter = {
+        "date_from": date_from,
+        "date_to": date_to,
+        "label": format_range_label(date_from, date_to),
+        "active_preset": active_preset,
+        "error": error,
+        "active": bool(date_from or date_to),
+    }
     return render_template(
         "profile.html",
         user=user,
-        stats=build_stats(user_id),
-        expenses=build_expenses(user_id),
-        categories=build_categories(user_id),
+        stats=build_stats(user_id, date_from, date_to),
+        expenses=build_expenses(user_id, date_from, date_to),
+        categories=build_categories(user_id, date_from, date_to),
+        date_filter=date_filter,
+        presets=presets,
     )
 
 
