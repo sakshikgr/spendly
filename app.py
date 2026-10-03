@@ -1,10 +1,20 @@
 import os
 import sqlite3
+from datetime import datetime
 
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
-from database.db import create_user, get_user_by_email, init_db, seed_db
+from database.db import (
+    create_user,
+    get_category_totals,
+    get_expense_stats,
+    get_expenses_for_user,
+    get_user_by_email,
+    get_user_by_id,
+    init_db,
+    seed_db,
+)
 
 app = Flask(__name__)
 # Fallback key is for local development only — set SECRET_KEY in production.
@@ -13,6 +23,46 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-only-change-me")
 with app.app_context():
     init_db()
     seed_db()
+
+
+# ------------------------------------------------------------------ #
+# Profile helpers                                                     #
+# ------------------------------------------------------------------ #
+
+def build_expenses(user_id):
+    return [
+        {
+            "date": datetime.strptime(row["date"], "%Y-%m-%d").strftime("%d %b %Y"),
+            "description": row["description"] or row["category"],
+            "category": row["category"],
+            "amount": row["amount"],
+        }
+        for row in get_expenses_for_user(user_id)
+    ]
+
+
+def build_stats(user_id):
+    stats = get_expense_stats(user_id)
+    return {
+        "total_spent": stats["total"],
+        "transactions": stats["count"],
+        "top_category": stats["top_category"] or "—",
+    }
+
+
+def build_categories(user_id):
+    rows = get_category_totals(user_id)
+    grand_total = sum(row["total"] for row in rows)
+    if not grand_total:
+        return []
+    return [
+        {
+            "name": row["category"],
+            "amount": row["total"],
+            "pct": round(row["total"] / grand_total * 100),
+        }
+        for row in rows
+    ]
 
 
 # ------------------------------------------------------------------ #
@@ -106,34 +156,24 @@ def profile():
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
-    # Hardcoded sample data — replaced with real queries in Step 5.
+    row = get_user_by_id(session["user_id"])
+    if row is None:
+        session.clear()
+        return redirect(url_for("login"))
+
+    user_id = row["id"]
     user = {
-        "name": "Demo User",
-        "email": "demo@spendly.com",
-        "initials": "DU",
-        "member_since": "January 2026",
+        "name": row["name"],
+        "email": row["email"],
+        "initials": "".join(word[0] for word in row["name"].split()[:2]).upper(),
+        "member_since": datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S").strftime("%B %Y"),
     }
-    expenses = [
-        {"date": "08 Oct 2026", "description": "Mobile recharge", "category": "Bills", "amount": 899.00},
-        {"date": "07 Oct 2026", "description": "Movie tickets", "category": "Entertainment", "amount": 499.00},
-        {"date": "06 Oct 2026", "description": "Dinner with friends", "category": "Food", "amount": 320.00},
-        {"date": "05 Oct 2026", "description": "Pharmacy", "category": "Health", "amount": 650.00},
-        {"date": "04 Oct 2026", "description": "Running shoes", "category": "Shopping", "amount": 2499.00},
-        {"date": "03 Oct 2026", "description": "Metro card recharge", "category": "Travel", "amount": 180.00},
-        {"date": "02 Oct 2026", "description": "Groceries", "category": "Food", "amount": 450.50},
-        {"date": "01 Oct 2026", "description": "Electricity bill", "category": "Bills", "amount": 1200.00},
-    ]
-    stats = {"total_spent": 6697.50, "transactions": 8, "top_category": "Shopping"}
-    categories = [
-        {"name": "Shopping", "amount": 2499.00, "pct": 37},
-        {"name": "Bills", "amount": 2099.00, "pct": 31},
-        {"name": "Food", "amount": 770.50, "pct": 12},
-        {"name": "Health", "amount": 650.00, "pct": 10},
-        {"name": "Entertainment", "amount": 499.00, "pct": 7},
-        {"name": "Travel", "amount": 180.00, "pct": 3},
-    ]
     return render_template(
-        "profile.html", user=user, stats=stats, expenses=expenses, categories=categories
+        "profile.html",
+        user=user,
+        stats=build_stats(user_id),
+        expenses=build_expenses(user_id),
+        categories=build_categories(user_id),
     )
 
 

@@ -114,3 +114,61 @@ def create_user(name, email, password):
         return cursor.lastrowid
     finally:
         conn.close()
+
+
+def get_user_by_id(user_id):
+    conn = get_db()
+    try:
+        return conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    finally:
+        conn.close()
+
+
+# ------------------------------------------------------------------ #
+# Expenses                                                            #
+# ------------------------------------------------------------------ #
+
+def get_expenses_for_user(user_id):
+    conn = get_db()
+    try:
+        return conn.execute(
+            "SELECT id, amount, category, date, description FROM expenses "
+            "WHERE user_id = ? ORDER BY date DESC, id DESC",
+            (user_id,),
+        ).fetchall()
+    finally:
+        conn.close()
+
+
+def get_expense_stats(user_id):
+    conn = get_db()
+    try:
+        totals = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count "
+            "FROM expenses WHERE user_id = ?",
+            (user_id,),
+        ).fetchone()
+        top = conn.execute(
+            "SELECT category FROM expenses WHERE user_id = ? "
+            "GROUP BY category ORDER BY SUM(amount) DESC, category LIMIT 1",
+            (user_id,),
+        ).fetchone()
+        return {
+            "total": float(totals["total"]),
+            "count": int(totals["count"]),
+            "top_category": top["category"] if top else None,
+        }
+    finally:
+        conn.close()
+
+
+def get_category_totals(user_id):
+    conn = get_db()
+    try:
+        return conn.execute(
+            "SELECT category, SUM(amount) AS total FROM expenses "
+            "WHERE user_id = ? GROUP BY category ORDER BY total DESC, category",
+            (user_id,),
+        ).fetchall()
+    finally:
+        conn.close()
