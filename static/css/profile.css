@@ -148,6 +148,20 @@
     color: var(--ink);
 }
 
+.txn-table .txn-actions {
+    text-align: right;
+    width: 1%;
+}
+
+.txn-edit {
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.txn-edit:hover { text-decoration: underline; }
+
 .txn-empty {
     text-align: center;
     color: var(--ink-muted);
