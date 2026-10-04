@@ -816,13 +816,12 @@ class TestRegression:
         assert AMOUNT_MSG in _text(resp)
         assert _count() == before
 
-    def test_delete_route_still_placeholder(self, auth_client):
+    def test_delete_get_does_not_delete(self, auth_client):
         eid = _demo_expense()["id"]
         before = _snapshot()
         resp = auth_client.get(f"/expenses/{eid}/delete")
         assert resp.status_code == 200
-        assert "Step 9" in _text(resp)
-        assert _snapshot() == before, "Delete placeholder must not delete anything"
+        assert _snapshot() == before, "GET on the delete route must not delete anything"
 
     def test_edit_placeholder_text_is_gone(self, auth_client):
         html = _text(auth_client.get(_url(_demo_expense()["id"])))

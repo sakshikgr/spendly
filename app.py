@@ -23,8 +23,19 @@ from database.db import (
 )
 
 app = Flask(__name__)
-# Fallback key is for local development only — set SECRET_KEY in production.
-app.secret_key = os.environ.get("SECRET_KEY", "dev-only-change-me")
+
+secret_key = os.environ.get("SECRET_KEY")
+if not secret_key:
+    # Only `python app.py` (local dev) may fall back to a known key. Anything
+    # else (a WSGI server in production) must set SECRET_KEY, otherwise anyone
+    # could forge a session cookie and log in as any user.
+    if __name__ != "__main__":
+        raise RuntimeError("Set the SECRET_KEY environment variable.")
+    secret_key = "dev-only-change-me"
+app.secret_key = secret_key
+# Lax stops other sites from sending the session cookie with their own POST
+# forms, so they can't add, edit or delete a logged-in user's expenses.
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 with app.app_context():
     init_db()
