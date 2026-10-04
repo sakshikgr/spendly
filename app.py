@@ -3,7 +3,7 @@ import os
 import sqlite3
 from datetime import date, datetime, timedelta
 
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
 from database.db import (
@@ -11,12 +11,14 @@ from database.db import (
     create_expense,
     create_user,
     get_category_totals,
+    get_expense_for_user,
     get_expense_stats,
     get_expenses_for_user,
     get_user_by_email,
     get_user_by_id,
     init_db,
     seed_db,
+    update_expense,
 )
 
 app = Flask(__name__)
@@ -35,6 +37,7 @@ with app.app_context():
 def build_expenses(user_id, date_from=None, date_to=None):
     return [
         {
+            "id": row["id"],
             "date": datetime.strptime(row["date"], "%Y-%m-%d").strftime("%d %b %Y"),
             "description": row["description"] or row["category"],
             "category": row["category"],
@@ -118,6 +121,44 @@ def format_range_label(date_from, date_to):
     if date_to:
         return f"Showing up to {fmt(date_to)}"
     return None
+
+
+# ------------------------------------------------------------------ #
+# Expense form helpers                                                #
+# ------------------------------------------------------------------ #
+
+EXPENSE_FIELDS = ("amount", "category", "date", "description")
+
+
+def validate_expense_form(form):
+    """Return (values, None) ready to store, or (None, error message)."""
+    try:
+        amount = round(float(form["amount"]), 2)
+    except ValueError:
+        amount = None
+    # Rounding first rejects values like 0.001 that would store as 0.
+    if amount is None or not math.isfinite(amount) or amount <= 0:
+        return None, "Please enter an amount greater than 0."
+
+    if form["category"] not in CATEGORIES:
+        return None, "Please choose a valid category."
+
+    try:
+        # Store the normalised ISO form: strptime also accepts "2026-1-5",
+        # which would break text comparison in the date filter.
+        expense_date = datetime.strptime(form["date"], "%Y-%m-%d").date().isoformat()
+    except ValueError:
+        return None, "Please enter a valid date."
+
+    if len(form["description"]) > 200:
+        return None, "Description must be 200 characters or fewer."
+
+    return {
+        "amount": amount,
+        "category": form["category"],
+        "date": expense_date,
+        "description": form["description"],
+    }, None
 
 
 # ------------------------------------------------------------------ #
@@ -269,52 +310,61 @@ def add_expense():
             form={"date": date.today().isoformat()},
         )
 
-    form = {
-        key: request.form.get(key, "").strip()
-        for key in ("amount", "category", "date", "description")
-    }
-
-    def form_error(message):
+    form = {key: request.form.get(key, "").strip() for key in EXPENSE_FIELDS}
+    values, error = validate_expense_form(form)
+    if error:
         return render_template(
-            "add_expense.html", error=message, categories=CATEGORIES, form=form
+            "add_expense.html", error=error, categories=CATEGORIES, form=form
         ), 400
 
-    try:
-        amount = round(float(form["amount"]), 2)
-    except ValueError:
-        amount = None
-    # Rounding first rejects values like 0.001 that would store as 0.
-    if amount is None or not math.isfinite(amount) or amount <= 0:
-        return form_error("Please enter an amount greater than 0.")
-
-    if form["category"] not in CATEGORIES:
-        return form_error("Please choose a valid category.")
-
-    try:
-        # Store the normalised ISO form: strptime also accepts "2026-1-5",
-        # which would break text comparison in the date filter.
-        expense_date = datetime.strptime(form["date"], "%Y-%m-%d").date().isoformat()
-    except ValueError:
-        return form_error("Please enter a valid date.")
-
-    if len(form["description"]) > 200:
-        return form_error("Description must be 200 characters or fewer.")
-
-    create_expense(
-        session["user_id"], amount, form["category"], expense_date, form["description"]
-    )
+    create_expense(session["user_id"], **values)
     flash("Expense added.", "success")
+    return redirect(url_for("profile"))
+
+
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
+def edit_expense(id):
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+    if get_user_by_id(session["user_id"]) is None:
+        session.clear()
+        return redirect(url_for("login"))
+
+    # Filtering by user_id means another user's expense is a plain 404.
+    expense = get_expense_for_user(id, session["user_id"])
+    if expense is None:
+        abort(404)
+
+    if request.method == "GET":
+        form = {
+            "amount": f"{expense['amount']:.2f}",
+            "category": expense["category"],
+            "date": expense["date"],
+            "description": expense["description"] or "",
+        }
+        return render_template(
+            "edit_expense.html", categories=CATEGORIES, form=form, expense_id=id
+        )
+
+    form = {key: request.form.get(key, "").strip() for key in EXPENSE_FIELDS}
+    values, error = validate_expense_form(form)
+    if error:
+        return render_template(
+            "edit_expense.html",
+            error=error,
+            categories=CATEGORIES,
+            form=form,
+            expense_id=id,
+        ), 400
+
+    update_expense(id, session["user_id"], **values)
+    flash("Expense updated.", "success")
     return redirect(url_for("profile"))
 
 
 # ------------------------------------------------------------------ #
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
-
-
-@app.route("/expenses/<int:id>/edit")
-def edit_expense(id):
-    return "Edit expense — coming in Step 8"
 
 
 @app.route("/expenses/<int:id>/delete")
