@@ -422,7 +422,8 @@ class TestDbFunctions:
         assert list(dbmod.get_category_totals(other, "2026-03-01", "2026-03-31")) == []
 
     def test_db_functions_treat_malicious_dates_as_data(self, seeded):
-        evil = "2026-03-01' OR '1'='1"
+        # Sorts after every real date, so it only matches rows if injected as SQL.
+        evil = "9999-12-31' OR '1'='1"
         rows = dbmod.get_expenses_for_user(seeded, date_from=evil)
         assert len(rows) == 0, "Injection string must be compared as a literal, not SQL"
 

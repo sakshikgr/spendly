@@ -17,12 +17,14 @@ venv/bin/pytest                             # run tests (pytest + pytest-flask a
 venv/bin/pytest path/to/test_file.py::test_name   # single test
 ```
 
-The app runs on **port 5001**, not 5000 — on macOS port 5000 is taken by AirPlay Receiver. There are no tests yet; quick route checks can use `app.test_client()`.
+The app runs on **port 5001**, not 5000 — on macOS port 5000 is taken by AirPlay Receiver. Tests live in `tests/` (one file per spec, e.g. `test_09-delete-expense.py`); each points `database.db.DB_PATH` at a temp file before importing `app`, so the real database is never touched.
+
+`SECRET_KEY` must be set in the environment whenever `app.py` is imported rather than run directly (WSGI server, tests). Only `python app.py` falls back to a dev key; `tests/conftest.py` sets one for pytest.
 
 ## Architecture
 
-- `app.py` — all routes in one file. Real pages (`/`, `/login`, `/register`, `/privacy`, `/terms`) render templates; the expense/profile/logout routes are string-returning placeholders.
-- `database/db.py` — empty stub; intended to hold `get_db()`, `init_db()`, `seed_db()` over SQLite (`expense_tracker.db`, gitignored).
+- `app.py` — all routes in one file: landing, register, login/logout, privacy, terms, `/profile` (stats, date filter, transactions, category breakdown), `/analytics` ("coming soon" page), and `/expenses/add`, `/expenses/<id>/edit`, `/expenses/<id>/delete` (GET confirms, POST deletes). Logged-in routes check `session["user_id"]`, and expense lookups filter on `user_id` so other users' expenses 404.
+- `database/db.py` — `get_db()`, `init_db()`, `seed_db()` (demo user `demo@spendly.com` / `demo123`) and user/expense helpers over SQLite (`expense_tracker.db`, gitignored). Raw `sqlite3`, parameterised queries only.
 - `templates/base.html` — shared layout (navbar, footer with Terms/Privacy links). Pages extend it and can fill `title`, `head` (page-specific stylesheets), `content` and `scripts` blocks. Link with `url_for(...)`, matching existing templates.
 
 ### Styling
