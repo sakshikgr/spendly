@@ -179,6 +179,19 @@ def update_expense(expense_id, user_id, amount, category, date, description):
         conn.close()
 
 
+def delete_expense(expense_id, user_id):
+    conn = get_db()
+    try:
+        cursor = conn.execute(
+            "DELETE FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id),
+        )
+        conn.commit()
+        return cursor.rowcount
+    finally:
+        conn.close()
+
+
 def get_expenses_for_user(user_id, date_from=None, date_to=None):
     clause, params = _date_range_clause(date_from, date_to)
     conn = get_db()
