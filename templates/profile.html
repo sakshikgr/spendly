@@ -11,6 +11,10 @@
 <section class="profile-section">
     <div class="profile-container">
 
+        {% for category, message in get_flashed_messages(with_categories=true) %}
+        <div class="auth-{{ category }}">{{ message }}</div>
+        {% endfor %}
+
         <div class="profile-card profile-user">
             <div class="profile-avatar">{{ user.initials }}</div>
             <div class="profile-info">

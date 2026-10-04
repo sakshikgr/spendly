@@ -139,6 +139,20 @@ def _date_range_clause(date_from, date_to):
     return clause, tuple(params)
 
 
+def create_expense(user_id, amount, category, date, description):
+    conn = get_db()
+    try:
+        cursor = conn.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, category, date, description or None),
+        )
+        conn.commit()
+        return cursor.lastrowid
+    finally:
+        conn.close()
+
+
 def get_expenses_for_user(user_id, date_from=None, date_to=None):
     clause, params = _date_range_clause(date_from, date_to)
     conn = get_db()

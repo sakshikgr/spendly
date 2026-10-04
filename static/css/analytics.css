@@ -1,0 +1,103 @@
+/* ------------------------------------------------------------------ */
+/* Analytics coming-soon page — loaded only by analytics.html          */
+/* ------------------------------------------------------------------ */
+
+.analytics-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    min-height: calc(100vh - 60px - 100px);
+}
+
+.analytics-card {
+    width: 100%;
+    max-width: 520px;
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 40px rgba(15, 15, 15, 0.06);
+    padding: 3rem 2.5rem 2.5rem;
+    text-align: center;
+}
+
+.analytics-icon {
+    width: 88px;
+    height: 88px;
+    margin: 0 auto 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent);
+    color: var(--paper-card);
+    border-radius: var(--radius-md);
+    box-shadow: 0 10px 24px rgba(26, 71, 42, 0.3);
+}
+
+.analytics-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--paper-card);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.55rem 1.25rem;
+    border-radius: 999px;
+    margin-bottom: 1.25rem;
+}
+
+.analytics-title {
+    font-family: var(--font-body);
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    line-height: 1.2;
+    margin-bottom: 1rem;
+}
+
+.analytics-subtitle {
+    color: var(--ink-muted);
+    font-size: 1rem;
+    line-height: 1.7;
+    max-width: 380px;
+    margin: 0 auto 2rem;
+}
+
+.analytics-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.analytics-dots span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--ink-muted);
+    animation: analytics-pulse 1.4s ease-in-out infinite;
+}
+
+.analytics-dots span:nth-child(2) { animation-delay: 0.2s; }
+.analytics-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes analytics-pulse {
+    0%, 80%, 100% { opacity: 0.4; transform: scale(0.85); }
+    40%           { opacity: 1;   transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .analytics-dots span { animation: none; }
+}
+
+.analytics-caption {
+    color: var(--ink-faint);
+    font-size: 0.8rem;
+}
+
+@media (max-width: 600px) {
+    .analytics-section { padding: 2.5rem 1rem; }
+    .analytics-card { padding: 2.5rem 1.5rem 2rem; }
+    .analytics-title { font-size: 1.6rem; }
+}

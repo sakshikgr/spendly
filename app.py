@@ -1,3 +1,4 @@
+import math
 import os
 import sqlite3
 from datetime import date, datetime, timedelta
@@ -6,6 +7,8 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 from werkzeug.security import check_password_hash
 
 from database.db import (
+    CATEGORIES,
+    create_expense,
     create_user,
     get_category_totals,
     get_expense_stats,
@@ -245,13 +248,68 @@ def profile():
     )
 
 
+@app.route("/analytics")
+def analytics():
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+    return render_template("analytics.html")
+
+
+@app.route("/expenses/add", methods=["GET", "POST"])
+def add_expense():
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+    if get_user_by_id(session["user_id"]) is None:
+        session.clear()
+        return redirect(url_for("login"))
+    if request.method == "GET":
+        return render_template(
+            "add_expense.html",
+            categories=CATEGORIES,
+            form={"date": date.today().isoformat()},
+        )
+
+    form = {
+        key: request.form.get(key, "").strip()
+        for key in ("amount", "category", "date", "description")
+    }
+
+    def form_error(message):
+        return render_template(
+            "add_expense.html", error=message, categories=CATEGORIES, form=form
+        ), 400
+
+    try:
+        amount = round(float(form["amount"]), 2)
+    except ValueError:
+        amount = None
+    # Rounding first rejects values like 0.001 that would store as 0.
+    if amount is None or not math.isfinite(amount) or amount <= 0:
+        return form_error("Please enter an amount greater than 0.")
+
+    if form["category"] not in CATEGORIES:
+        return form_error("Please choose a valid category.")
+
+    try:
+        # Store the normalised ISO form: strptime also accepts "2026-1-5",
+        # which would break text comparison in the date filter.
+        expense_date = datetime.strptime(form["date"], "%Y-%m-%d").date().isoformat()
+    except ValueError:
+        return form_error("Please enter a valid date.")
+
+    if len(form["description"]) > 200:
+        return form_error("Description must be 200 characters or fewer.")
+
+    create_expense(
+        session["user_id"], amount, form["category"], expense_date, form["description"]
+    )
+    flash("Expense added.", "success")
+    return redirect(url_for("profile"))
+
+
 # ------------------------------------------------------------------ #
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
-
-@app.route("/expenses/add")
-def add_expense():
-    return "Add expense — coming in Step 7"
 
 
 @app.route("/expenses/<int:id>/edit")
