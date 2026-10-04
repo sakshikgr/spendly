@@ -162,6 +162,16 @@
 
 .txn-edit:hover { text-decoration: underline; }
 
+.txn-delete {
+    margin-left: 0.75rem;
+    color: var(--danger);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.txn-delete:hover { text-decoration: underline; }
+
 .txn-empty {
     text-align: center;
     color: var(--ink-muted);
